@@ -1,11 +1,18 @@
-﻿using System;
+﻿using AI___model.InputAndOutput;
+using Aspose.Imaging;
+using Aspose.Imaging.FileFormats.Cdr.Objects;
+using System;
+using System.Data;
+using System.Reflection;
 
 class Program
 {
     static void Main()
     {
-        string imagesPath = @"C:\Users\jakub\source\repos\AI - model\AI - model\Dataset\Images\t10k-images.idx3-ubyte";
-        string labelsPath = @"C:\Users\jakub\source\repos\AI - model\AI - model\Dataset\Images\t10k-labels.idx1-ubyte";
+
+
+        string imagesPath = @"C:\Users\Jakub\source\repos\MrArond\AI---model\AI - model\Dataset\Images\t10k-images.idx3-ubyte";
+        string labelsPath = @"C:\Users\Jakub\source\repos\MrArond\AI---model\AI - model\Dataset\Images\t10k-labels.idx1-ubyte";
 
         int n = 10;
 
@@ -23,8 +30,17 @@ class Program
             Console.WriteLine(new string('-', 40));
         }
 
+        string PathObject = "C:\\Users\\Jakub\\source\\repos\\MrArond\\AI---model\\AI - model\\Dataset\\TestObject\\cos.png";
+        string PathToSecondOBject = "C:\\Users\\Jakub\\source\\repos\\MrArond\\AI---model\\AI - model\\Dataset\\TestObject\\CosTestowe1.png";
+        string NameObject = "CosTestowe1.png";
+        string NameObject2 = "CosTestowe2.png";
+        string PathToFolder = "C:\\Users\\Jakub\\source\\repos\\MrArond\\AI---model\\AI - model\\Dataset\\TestObject";
+
+        ResizeGraphic.ResizeTo28x28AndSave(PathObject, PathToFolder, NameObject);
+        ChangeColorOfObject.ChangeColor(PathToSecondOBject, PathToFolder, NameObject2);
+
         Console.WriteLine("Koniec.");
-        Console.ReadKey();
+
     }
 
     static void PrintImageAscii(float[] img, int rows, int cols, float threshold)
@@ -39,4 +55,6 @@ class Program
             Console.WriteLine();
         }
     }
+
+
 }
