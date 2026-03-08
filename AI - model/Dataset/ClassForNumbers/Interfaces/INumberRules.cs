@@ -6,6 +6,5 @@ namespace AI___model.Dataset.ClassForNumbers.Interfaces
 {
     internal interface INumberRules
     {
-        public Task<byte> NumberRules(bool[,]Table); 
     }
 }
