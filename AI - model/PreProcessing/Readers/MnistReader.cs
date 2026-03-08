@@ -55,11 +55,11 @@ public class MnistReader
                 var pixel = br.ReadByte();
                 if (pixel > Config.Threshold)
                 {
-                    bits[i] = true;
+                    bits[j] = true;
                 }
                 else
                 {
-                    bits[i] = false;
+                    bits[j] = false;
                 }
             }
 

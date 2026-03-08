@@ -2,11 +2,12 @@
 
 public class BinaryImagesHandler
 {
-    public bool Save(string path, List<byte[]> bytes)
+    public bool Save(string path, string name, List<byte[]> bytes)
     {
         try
         {
-            using var bw = new BinaryWriter(File.OpenWrite(path));
+            Directory.CreateDirectory(path);
+            using var bw = new BinaryWriter(File.OpenWrite(Path.Combine(path, name)));
             foreach (var byteArray in bytes)
             {
                 bw.Write(byteArray);

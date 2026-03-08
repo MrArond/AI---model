@@ -51,7 +51,7 @@ public class PreProcessingView : IConsoleView
         
         var bih = new BinaryImagesHandler();
         
-        var ok = bih.Save(Path.Combine(Config.MnistPath, Config.TempPath, "mnist.bin"), bytes);
+        var ok = bih.Save(Path.Combine(Config.MnistPath, Config.TempPath), "mnist.bin", bytes);
         Console.ChangeView(new MainView());
         
         return ok;
