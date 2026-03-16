@@ -4,15 +4,15 @@ using Aspose.Imaging.FileFormats.Cdr.Objects;
 using System;
 using System.Data;
 using System.Reflection;
+using AI___model.PreProcessing.Readers;
 
 class Program
 {
     static void Main()
     {
-
         AI___model.Console.Console.Run();
 
-
+        
 
 
         // string imagesPath = @"C:\Users\Jakub\source\repos\MrArond\AI---model\AI - model\Dataset\Images\t10k-images.idx3-ubyte";
@@ -60,6 +60,8 @@ class Program
         }
     }
 
+
+   
 
 }
 
