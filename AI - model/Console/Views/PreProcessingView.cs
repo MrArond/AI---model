@@ -1,4 +1,5 @@
-﻿using AI___model.TempFilesHandlers;
+﻿using AI___model.PreProcessing.Readers;
+using AI___model.TempFilesHandlers;
 
 namespace AI___model.Console.Views;
 
@@ -27,6 +28,7 @@ public class PreProcessingView : IConsoleView
         {
             case "1":
                 System.Console.WriteLine("Preparing data from raw images...");
+                PrepareDataFromRawImages();
                 break;
             case "2":
                 System.Console.WriteLine("Converting data from MNIST dataset...");
@@ -42,7 +44,7 @@ public class PreProcessingView : IConsoleView
     }
 
 
-    public bool Mnist()
+    private bool Mnist()
     {
         var mr = new MnistReader();
         
@@ -55,5 +57,27 @@ public class PreProcessingView : IConsoleView
         Console.ChangeView(new MainView());
         
         return ok;
+    }
+    
+    private void PrepareDataFromRawImages()
+    {
+        var size = System.Console.WindowHeight;
+        System.Console.Clear();
+        System.Console.WriteLine("Enter path to raw images:");
+        
+        System.Console.CursorTop = size - 1;
+        
+        System.Console.Write("> ");
+        
+        var path = System.Console.ReadLine();
+        
+        var ir = new ImagesReader();
+        var data = ir.ReadData(path);
+        System.Console.WriteLine($"Read {data.Count} images from raw images. \n Saving to temp files...");
+        
+        var bih = new BinaryImagesHandler();
+        
+        var ok = bih.Save(Path.Combine(path, Config.TempPath), "images.bin", data);
+        Console.ChangeView(new MainView());
     }
 }
