@@ -7,6 +7,7 @@ using System.Threading.Tasks;
 
 namespace AI___model.Dataset.ClassForNumbers.Implementation
 {
+    //cos
     internal class Rules : Interfaces.IRules
     {
 

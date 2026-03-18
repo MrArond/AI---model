@@ -7,6 +7,7 @@ namespace AI___model.Dataset.ClassForNumbers.Interfaces
 {
     internal interface IRules
     {
+        //cos
         Task<List<float>> Field(List<bool[,]> images);
         Task<List<float>> Circuit(List<bool[,]> images);
         Task<List<float>> Width(List<bool[,]> images);
