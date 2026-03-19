@@ -20,22 +20,36 @@ namespace AI___model.Dataset.ClassForNumbers.Implementation
         {
             int rows = image.GetLength(0);
             int cols = image.GetLength(1);
-            float perimeter = 0;
+            double perimeter = 0;
 
             for (int y = 0; y < rows; y++)
             {
                 for (int x = 0; x < cols; x++)
                 {
-                    if (image[y, x])
-                    {
-                        if (y == 0 || !image[y - 1, x]) perimeter++;
-                        if (y == rows - 1 || !image[y + 1, x]) perimeter++;
-                        if (x == 0 || !image[y, x - 1]) perimeter++;
-                        if (x == cols - 1 || !image[y, x + 1]) perimeter++;
-                    }
+                    if (!image[y, x]) continue;
+
+                    bool n = (y > 0) && image[y - 1, x];
+                    bool s = (y < rows - 1) && image[y + 1, x];
+                    bool w = (x > 0) && image[y, x - 1];
+                    bool e = (x < cols - 1) && image[y, x + 1];
+
+                    if (!n) perimeter += 1.0;
+                    if (!s) perimeter += 1.0;
+                    if (!w) perimeter += 1.0;
+                    if (!e) perimeter += 1.0;
+
+                    bool ne = (y > 0 && x < cols - 1) && image[y - 1, x + 1];
+                    bool nw = (y > 0 && x > 0) && image[y - 1, x - 1];
+                    bool se = (y < rows - 1 && x < cols - 1) && image[y + 1, x + 1];
+                    bool sw = (y < rows - 1 && x > 0) && image[y + 1, x - 1];
+
+                    if (!n && !w && !nw) perimeter += 0.414;
+                    if (!n && !e && !ne) perimeter += 0.414;
+                    if (!s && !w && !sw) perimeter += 0.414;
+                    if (!s && !e && !se) perimeter += 0.414;
                 }
             }
-            return perimeter;
+            return (float)perimeter;
         }
 
         private float CalculateSingleFieldSync(bool[,] image)
@@ -359,6 +373,357 @@ namespace AI___model.Dataset.ClassForNumbers.Implementation
                 }
                 return proportions;
             });
+        }
+
+        // --- NEW OR UPDATED PRECISE MATHEMATICAL FEATURES ---
+
+        async Task<List<float>> Interfaces.IRules.CalculateCircularity(List<float> areas, List<float> perimeters)
+        {
+            return await Task.Run(() =>
+            {
+                int count = Math.Min(areas.Count, perimeters.Count);
+                if (count <= 0) return new List<float>();
+
+                var circularityList = new List<float>(count);
+                const float fourPi = 4f * (float)Math.PI;
+
+                for (int i = 0; i < count; i++)
+                {
+                    float area = areas[i];
+                    float perimeter = perimeters[i];
+                    if (perimeter > 0)
+                    {
+                        float circularity = (fourPi * area) / (perimeter * perimeter);
+                        circularityList.Add(circularity);
+                    }
+                    else
+                    {
+                        circularityList.Add(0f);
+                    }
+                }
+                return circularityList;
+            });
+        }
+
+        async Task<List<float>> Interfaces.IRules.CalculateRadialRatiosAsync(List<bool[,]> images)
+        {
+            float[] results = new float[images.Count];
+            await Task.Run(() =>
+            {
+                Parallel.For(0, images.Count, i =>
+                {
+                    var img = images[i];
+                    int rows = img.GetLength(0);
+                    int cols = img.GetLength(1);
+
+                    long sumX = 0, sumY = 0, count = 0;
+                    for (int y = 0; y < rows; y++)
+                        for (int x = 0; x < cols; x++)
+                            if (img[y, x]) { sumX += x; sumY += y; count++; }
+
+                    if (count == 0) { results[i] = 0; return; }
+                    float cX = (float)sumX / count;
+                    float cY = (float)sumY / count;
+
+                    double maxD = 0;
+                    double minD = double.MaxValue;
+
+                    for (int y = 0; y < rows; y++)
+                    {
+                        for (int x = 0; x < cols; x++)
+                        {
+                            if (img[y, x])
+                            {
+                                if (y == 0 || !img[y - 1, x] || y == rows - 1 || !img[y + 1, x] ||
+                                    x == 0 || !img[y, x - 1] || x == cols - 1 || !img[y, x + 1])
+                                {
+                                    double dist = Math.Sqrt(Math.Pow(x - cX, 2) + Math.Pow(y - cY, 2));
+                                    if (dist > maxD) maxD = dist;
+                                    if (dist < minD) minD = dist;
+                                }
+                            }
+                        }
+                    }
+                    results[i] = (minD > 0) ? (float)(maxD / minD) : 0;
+                });
+            });
+            return results.ToList();
+        }
+
+        async Task<List<float>> Interfaces.IRules.CalculateExtentsAsync(List<bool[,]> images, List<float> areas)
+        {
+            float[] results = new float[images.Count];
+            await Task.Run(() =>
+            {
+                Parallel.For(0, images.Count, i =>
+                {
+                    var img = images[i];
+                    int rows = img.GetLength(0);
+                    int cols = img.GetLength(1);
+
+                    int minX = cols, maxX = 0, minY = rows, maxY = 0;
+
+                    for (int y = 0; y < rows; y++)
+                    {
+                        for (int x = 0; x < cols; x++)
+                        {
+                            if (img[y, x])
+                            {
+                                if (x < minX) minX = x; if (x > maxX) maxX = x;
+                                if (y < minY) minY = y; if (y > maxY) maxY = y;
+                            }
+                        }
+                    }
+
+                    float width = maxX - minX + 1;
+                    float height = maxY - minY + 1;
+                    float boundingBoxArea = width * height;
+
+                    results[i] = (boundingBoxArea > 0) ? areas[i] / boundingBoxArea : 0;
+                });
+            });
+            return results.ToList();
+        }
+
+        async Task<List<float>> Interfaces.IRules.CalculateInertiaRatiosAsync(List<bool[,]> images)
+        {
+            float[] results = new float[images.Count];
+            await Task.Run(() =>
+            {
+                Parallel.For(0, images.Count, i =>
+                {
+                    var img = images[i];
+                    int rows = img.GetLength(0);
+                    int cols = img.GetLength(1);
+
+                    double m00 = 0, m10 = 0, m01 = 0;
+                    for (int y = 0; y < rows; y++)
+                        for (int x = 0; x < cols; x++)
+                            if (img[y, x]) { m00++; m10 += x; m01 += y; }
+
+                    if (m00 == 0) return;
+                    double cX = m10 / m00, cY = m01 / m00;
+                    double mu20 = 0, mu02 = 0, mu11 = 0;
+
+                    for (int y = 0; y < rows; y++)
+                        for (int x = 0; x < cols; x++)
+                            if (img[y, x])
+                            {
+                                mu20 += Math.Pow(x - cX, 2);
+                                mu02 += Math.Pow(y - cY, 2);
+                                mu11 += (x - cX) * (y - cY);
+                            }
+
+                    double common = Math.Sqrt(Math.Pow(mu20 - mu02, 2) + 4 * Math.Pow(mu11, 2));
+                    double axisMajor = Math.Sqrt(2 * (mu20 + mu02 + common) / m00);
+                    double axisMinor = Math.Sqrt(2 * (mu20 + mu02 - common) / m00);
+                    results[i] = (axisMinor > 0) ? (float)(axisMajor / axisMinor) : 1f;
+                });
+            });
+            return results.ToList();
+        }
+
+        async Task<List<int>> Interfaces.IRules.CalculatePeakCountsAsync(List<bool[,]> images)
+        {
+            int[] results = new int[images.Count];
+            await Task.Run(() =>
+            {
+                Parallel.For(0, images.Count, i =>
+                {
+                    var img = images[i];
+                    int rows = img.GetLength(0);
+                    int cols = img.GetLength(1);
+
+                    double m00 = 0, m10 = 0, m01 = 0;
+                    for (int y = 0; y < rows; y++)
+                        for (int x = 0; x < cols; x++)
+                            if (img[y, x]) { m00++; m10 += x; m01 += y; }
+
+                    if (m00 == 0) { results[i] = 0; return; }
+                    double cX = m10 / m00;
+                    double cY = m01 / m00;
+
+                    float[] radial = new float[360];
+                    for (int y = 0; y < rows; y++)
+                    {
+                        for (int x = 0; x < cols; x++)
+                        {
+                            if (!img[y, x]) continue;
+                            double dx = x - cX;
+                            double dy = y - cY;
+                            int angle = (int)((Math.Atan2(dy, dx) * 180.0 / Math.PI) + 360) % 360;
+                            float dist = (float)Math.Sqrt(dx * dx + dy * dy);
+                            if (dist > radial[angle]) radial[angle] = dist;
+                        }
+                    }
+
+                    float[] smooth = new float[360];
+                    int window = 7;
+                    for (int a = 0; a < 360; a++)
+                    {
+                        float sum = 0; int count = 0;
+                        for (int k = -window; k <= window; k++)
+                        {
+                            int idx = (a + k + 360) % 360;
+                            sum += radial[idx]; count++;
+                        }
+                        smooth[a] = sum / count;
+                    }
+
+                    float maxVal = smooth.Max();
+                    if (maxVal > 0)
+                    {
+                        for (int a = 0; a < 360; a++) smooth[a] /= maxVal;
+                    }
+
+                    int peaks = 0;
+                    float threshold = 0.2f;
+                    for (int a = 0; a < 360; a++)
+                    {
+                        int prev = (a - 1 + 360) % 360;
+                        int next = (a + 1) % 360;
+                        if (smooth[a] > smooth[prev] && smooth[a] > smooth[next] && smooth[a] > threshold) peaks++;
+                    }
+                    results[i] = peaks;
+                });
+            });
+            return results.ToList();
+        }
+
+        async Task<List<float>> Interfaces.IRules.CalculateCentralSymmetryAsync(List<bool[,]> images)
+        {
+            float[] results = new float[images.Count];
+            await Task.Run(() =>
+            {
+                Parallel.For(0, images.Count, i =>
+                {
+                    var img = images[i];
+                    int rows = img.GetLength(0);
+                    int cols = img.GetLength(1);
+
+                    double m10 = 0, m01 = 0, m00 = 0;
+                    for (int y = 0; y < rows; y++)
+                        for (int x = 0; x < cols; x++)
+                            if (img[y, x]) { m00++; m10 += x; m01 += y; }
+
+                    if (m00 == 0) { results[i] = 0; return; }
+                    double cX = m10 / m00;
+                    double cY = m01 / m00;
+
+                    int symmetricPoints = 0;
+                    int totalPoints = 0;
+
+                    for (int y = 0; y < rows; y++)
+                    {
+                        for (int x = 0; x < cols; x++)
+                        {
+                            if (img[y, x])
+                            {
+                                totalPoints++;
+                                int oppX = (int)Math.Round(2 * cX - x);
+                                int oppY = (int)Math.Round(2 * cY - y);
+
+                                if (oppX >= 0 && oppX < cols && oppY >= 0 && oppY < rows)
+                                    if (img[oppY, oppX]) symmetricPoints++;
+                            }
+                        }
+                    }
+                    results[i] = (float)symmetricPoints / totalPoints;
+                });
+            });
+            return results.ToList();
+        }
+
+        (float threshold, float impurity) Interfaces.IRules.GiniImpurityFast(List<float> values, List<int> labels)
+        {
+            int n = values.Count;
+
+            var sorted = values
+                .Select((v, i) => (value: v, label: labels[i]))
+                .OrderBy(x => x.value)
+                .ToList();
+
+            Dictionary<int, int> rightCounts = new();
+            foreach (var l in labels)
+            {
+                if (rightCounts.ContainsKey(l)) rightCounts[l]++;
+                else rightCounts[l] = 1;
+            }
+
+            Dictionary<int, int> leftCounts = new();
+            float bestThreshold = 0;
+            float bestImpurity = float.MaxValue;
+
+            int leftSize = 0;
+            int rightSize = n;
+
+            for (int i = 0; i < n - 1; i++)
+            {
+                var label = sorted[i].label;
+
+                if (!leftCounts.ContainsKey(label)) leftCounts[label] = 0;
+                leftCounts[label]++;
+
+                rightCounts[label]--;
+                if (rightCounts[label] == 0) rightCounts.Remove(label);
+
+                leftSize++;
+                rightSize--;
+
+                if (sorted[i].value == sorted[i + 1].value) continue;
+
+                float threshold = (sorted[i].value + sorted[i + 1].value) / 2;
+
+                float leftImp = ComputeFastGini(leftCounts, leftSize);
+                float rightImp = ComputeFastGini(rightCounts, rightSize);
+
+                float totalImp = (leftSize / (float)n) * leftImp + (rightSize / (float)n) * rightImp;
+
+                if (totalImp < bestImpurity)
+                {
+                    bestImpurity = totalImp;
+                    bestThreshold = threshold;
+                }
+            }
+            return (bestThreshold, bestImpurity);
+        }
+
+        private float ComputeFastGini(Dictionary<int, int> counts, int total)
+        {
+            if (total == 0) return 0;
+            float impurity = 1f;
+            foreach (var c in counts.Values)
+            {
+                float p = c / (float)total;
+                impurity -= p * p;
+            }
+            return impurity;
+        }
+
+        void Interfaces.IRules.StandardScale(List<float> values)
+        {
+            int n = values.Count;
+            if (n == 0) return;
+
+            double sum = 0;
+            for (int i = 0; i < n; i++) sum += values[i];
+            double mean = sum / n;
+
+            double variance = 0;
+            for (int i = 0; i < n; i++)
+            {
+                double diff = values[i] - mean;
+                variance += diff * diff;
+            }
+            variance /= n;
+            double std = Math.Sqrt(variance);
+
+            if (std == 0) return;
+
+            for (int i = 0; i < n; i++)
+            {
+                values[i] = (float)((values[i] - mean) / std);
+            }
         }
     }
 }

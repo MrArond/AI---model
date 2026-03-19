@@ -20,5 +20,13 @@ namespace AI___model.Dataset.ClassForNumbers.Interfaces
         bool[,] MoveImageToCenter(bool[,] img);
         void normalize_minmax(List<float> values);
         (float, float) GiniImpurity(List<float> values, List<int> labels);
+        Task<List<float>> CalculateCircularity(List<float> areas, List<float> perimeters);
+        Task<List<float>> CalculateRadialRatiosAsync(List<bool[,]> images);
+        Task<List<float>> CalculateExtentsAsync(List<bool[,]> images, List<float> areas);
+        Task<List<float>> CalculateInertiaRatiosAsync(List<bool[,]> images);
+        Task<List<int>> CalculatePeakCountsAsync(List<bool[,]> images);
+        Task<List<float>> CalculateCentralSymmetryAsync(List<bool[,]> images);
+        (float threshold, float impurity) GiniImpurityFast(List<float> values, List<int> labels);
+        void StandardScale(List<float> values);
     }
 }
