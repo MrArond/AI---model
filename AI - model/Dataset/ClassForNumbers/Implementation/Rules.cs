@@ -536,8 +536,12 @@ namespace AI___model.Dataset.ClassForNumbers.Implementation
 
                     double m00 = 0, m10 = 0, m01 = 0;
                     for (int y = 0; y < rows; y++)
+                    {
                         for (int x = 0; x < cols; x++)
+                        {
                             if (img[y, x]) { m00++; m10 += x; m01 += y; }
+                        }
+                    }
 
                     if (m00 == 0) { results[i] = 0; return; }
                     double cX = m10 / m00;
@@ -557,7 +561,8 @@ namespace AI___model.Dataset.ClassForNumbers.Implementation
                         }
                     }
 
-                    float[] smooth = new float[360];
+                    // Wygładzanie nr 1 (eliminacja ostrych krawędzi pikseli)
+                    float[] smooth1 = new float[360];
                     int window = 7;
                     for (int a = 0; a < 360; a++)
                     {
@@ -567,22 +572,63 @@ namespace AI___model.Dataset.ClassForNumbers.Implementation
                             int idx = (a + k + 360) % 360;
                             sum += radial[idx]; count++;
                         }
+                        smooth1[a] = sum / count;
+                    }
+
+                    // Wygładzanie nr 2 (głębokie tłumienie szumów dla stabilności)
+                    float[] smooth = new float[360];
+                    for (int a = 0; a < 360; a++)
+                    {
+                        float sum = 0; int count = 0;
+                        for (int k = -window; k <= window; k++)
+                        {
+                            int idx = (a + k + 360) % 360;
+                            sum += smooth1[idx]; count++;
+                        }
                         smooth[a] = sum / count;
                     }
 
                     float maxVal = smooth.Max();
+                    float minVal = smooth.Min();
+
                     if (maxVal > 0)
                     {
                         for (int a = 0; a < 360; a++) smooth[a] /= maxVal;
+                        minVal /= maxVal;
+                    }
+
+                    // Weryfikacja dla kół (brak szczytów, promień prawie identyczny na każdym stopniu)
+                    if (1.0f - minVal < 0.05f)
+                    {
+                        results[i] = 0;
+                        return; // Oznacza 0 wierzchołków
                     }
 
                     int peaks = 0;
-                    float threshold = 0.2f;
                     for (int a = 0; a < 360; a++)
                     {
-                        int prev = (a - 1 + 360) % 360;
-                        int next = (a + 1) % 360;
-                        if (smooth[a] > smooth[prev] && smooth[a] > smooth[next] && smooth[a] > threshold) peaks++;
+                        bool isLocalMax = true;
+                        int checkWindow = 15; // Weryfikujemy 15 stopni w każdą stronę
+
+                        for (int k = 1; k <= checkWindow; k++)
+                        {
+                            int forward = (a + k) % 360;
+                            int backward = (a - k + 360) % 360;
+
+                            // <= w jednym, a < w drugim kierunku upewnia nas, że jeżeli wierzchołek jest 
+                            // całkowicie płaski na wielu stopniach, policzymy go tylko 1 raz.
+                            if (smooth[forward] > smooth[a] || smooth[backward] >= smooth[a])
+                            {
+                                isLocalMax = false;
+                                break;
+                            }
+                        }
+
+                        // Dodatkowy warunek - wierzchołki w klasycznej geometrii odstają znacząco od obwodu bocznego.
+                        if (isLocalMax && smooth[a] > 0.75f)
+                        {
+                            peaks++;
+                        }
                     }
                     results[i] = peaks;
                 });
