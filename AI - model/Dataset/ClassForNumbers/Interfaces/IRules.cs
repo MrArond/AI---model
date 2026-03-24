@@ -10,10 +10,10 @@ namespace AI___model.Dataset.ClassForNumbers.Interfaces
 
 
 
-        Task<List<(double cX, double cY, double area)>> CalculateCentersAndAreasAsync(List<bool[,]> images);
-        Task<List<float>> CalculateRadialRatiosAsync(List<bool[,]> images, List<(double cX, double cY, double area)> metrics);
-        Task<List<float>> CalculateExtentsAsync(List<bool[,]> images, List<float> areas);
-        Task<List<float>> CalculateInertiaRatiosAsync(List<bool[,]> images, List<(double cX, double cY, double area)> metrics);
-        Task<List<float>> CalculateCentralSymmetryAsync(List<bool[,]> images, List<(double cX, double cY, double area)> metrics);
+       (double cX, double cY, double area) CalculateCentersAndAreasAsync(bool[,] images);
+       float CalculateRadialRatiosAsync(bool[,]img, (double cX, double cY, double area) metric);
+       float CalculateExtentsAsync(bool[,] img, float areas);
+       float CalculateInertiaRatiosAsync(bool[,] img, (double cX, double cY, double area) metric);
+       float CalculateCentralSymmetryAsync(bool[,] img, (double cX, double cY, double area) metric);
     }
 }
